@@ -1,3 +1,4 @@
+import logo from './logo.svg';
 import './App.css';
 import ChatInterface from './component/chat_interface/chat_interface.js';
 
