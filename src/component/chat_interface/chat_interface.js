@@ -1,10 +1,19 @@
 import React, { useState } from "react";
+import "./chat_interface.css";
 
 const ChatInterface = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, author: "user", text: "Bonjour" },
-    { id: 2, author: "bot", text: "Bonjour ! Comment puis-je vous aider ?" },
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+
+  const sendMessage = () => {
+    if (inputValue.trim() === "") return;
+
+    setMessages([
+      ...messages,
+      { id: Date.now(), author: "user", text: inputValue },
+    ]);
+    setInputValue(""); // Réinitialiser l’input
+  };
 
   return (
     <div className="chat-container">
@@ -22,11 +31,15 @@ const ChatInterface = () => {
         ))}
       </div>
       <div className="chat-input">
-        <input type="text" placeholder="Écrivez votre message..." />
-        <button>Envoyer</button>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="Écrivez votre message..."
+        />
+        <button onClick={sendMessage}>Envoyer</button>
       </div>
     </div>
   );
 };
-
 export default ChatInterface;
