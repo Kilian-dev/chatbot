@@ -6,11 +6,11 @@ const ChatInput = ({ inputMessage, setInputMessage, sendMessage }) => {
       <input
         type="text"
         value={inputMessage}
-        placeholder="Entrez vos symptômes, séparés par des virgules..."
+        placeholder="Enter your symptoms, separated by commas..."
         onChange={(e) => setInputMessage(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && sendMessage()} // Envoi avec la touche Entrée
+        onKeyPress={(e) => e.key === "Enter" && sendMessage()} // Send message on Enter key press
       />
-      <button onClick={sendMessage}>Envoyer</button>
+      <button onClick={sendMessage}>Send</button>
     </div>
   );
 };

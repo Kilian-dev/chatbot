@@ -9,7 +9,7 @@ const SOCKET_URL = "http://localhost:5000"; // Assurez-vous que Flask écoute su
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
-    { id: 1, author: "bot", text: "Bonjour ! Entrez vos symptômes pour un diagnostic." },
+    { id: 1, author: "bot", text: "Hello! I am your medical assistant. Please provide me with 3 symptoms so I can assist you with a diagnosis." },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [socket, setSocket] = useState(null);
@@ -43,7 +43,7 @@ const ChatInterface = () => {
           {
             id: prevMessages.length + 1,
             author: "bot",
-            text: `Maladie prédite : ${response.disease}. Probabilités : ${sortedProbabilities}`,
+            text: `Predicted disease: ${response.disease}. Probabilities: ${sortedProbabilities}`,
           },
         ]);
       } catch (error) {

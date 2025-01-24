@@ -1,11 +1,11 @@
 import React from "react";
 
 const ChatMessage = ({ message }) => {
-  const { author, text } = message;
+  const { text, author } = message;
 
   return (
     <div className={`chat-message ${author}`}>
-      <span className="author">{author === "user" ? "Vous" : "Bot"} :</span> {text}
+      {text}
     </div>
   );
 };
