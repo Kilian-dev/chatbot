@@ -29,13 +29,21 @@ const ChatInterface = () => {
         const response = data; // Les données envoyées par le serveur
         console.log("Frontend: Réponse reçue :", response);
 
+        
+        // Formater les probabilités pour l'affichage
+        const sortedProbabilities = Object.entries(response.disease_probabilities)
+          .sort(([, a], [, b]) => b - a) // Trier par probabilité décroissante
+          .slice(0, 3) // Garder les 3 premières probabilités
+          .map(([disease, probability]) => `${disease}: ${(probability * 100).toFixed(2)}%`)
+          .join(", ");
+
         // Ajouter la réponse du serveur (maladie et traitement)
         setMessages((prevMessages) => [
           ...prevMessages,
           {
             id: prevMessages.length + 1,
             author: "bot",
-            text: `Maladie prédite : ${response.disease}. Conseils : ${response.treatment}`,
+            text: `Maladie prédite : ${response.disease}. Probabilités : ${sortedProbabilities}`,
           },
         ]);
       } catch (error) {
