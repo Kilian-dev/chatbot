@@ -34,24 +34,27 @@
   margin-bottom: 15px;
   padding: 10px 15px;
   border-radius: 10px;
+  width: fit-content; 
   max-width: 70%;
   font-size: 1rem;
   line-height: 1.5;
   word-wrap: break-word;
 }
 
-.chat-message.user {
-  align-self: flex-end;
-  background-color: #e3f2fd;
-  color: #0d47a1;
-  text-align: right;
-}
 
 .chat-message.bot {
-  align-self: flex-start;
+  align-self: flex;
   background-color: #f1f8e9;
   color: #33691e;
   text-align: left;
+}
+.chat-message.user {
+  align-self: flex;
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  text-align: right;
+  margin-right: 0; 
+  margin-left: auto;
 }
 
 .chat-input {
