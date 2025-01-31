@@ -1,80 +1,108 @@
-
-import "./chat_interface.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import io from "socket.io-client";
 import ChatMessage from "./chat_message";
 import ChatInput from "./chat_input";
+import "./chat_interface.css";
 
 // Connexion au serveur WebSocket
-const SOCKET_URL = "ws://localhost:4000";
+const SOCKET_URL = "http://127.0.0.1:5000";
+const socket = io(SOCKET_URL);
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
-    { id: 1, author: "user", text: "Bonjour" },
-    { id: 2, author: "bot", text: "Bonjour ! Comment puis-je vous aider ?" },
+    { id: 1, author: "user", text: "Hello" },
+    { id: 2, author: "bot", text: "Hello! Describe your symptoms to get a diagnosis." },
   ]);
   const [inputMessage, setInputMessage] = useState("");
-  const [socket, setSocket] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingQuestion, setPendingQuestion] = useState(null);
+  const messagesEndRef = useRef(null);
 
-  // Effet pour gérer la connexion WebSocket
+  // Fonction pour scroller automatiquement vers le bas
+  const scrollToBottom = () => {
+    const messagesContainer = messagesEndRef.current?.parentElement;
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  };
+
+  // Connexion au WebSocket
   useEffect(() => {
-    console.log("Frontend: Initialisation de la connexion...");
+    console.log("Frontend: Connexion au serveur...");
 
-    // Création de la connexion WebSocket
-    const ws = new WebSocket(SOCKET_URL);
+    socket.on("connect", () => console.log("Frontend: Connecté au serveur."));
 
-    ws.onopen = () => {
-      console.log("Frontend: Connexion établie avec le serveur.");
-    };
+    socket.on("message", (response) => {
+      console.log("Frontend: Réponse reçue : ", response);
 
-    ws.onmessage = (event) => {
-      try {
-        const response = JSON.parse(event.data);
-        console.log("Frontend: Message reçu : ", response);
+      setTimeout(() => {
+        setIsLoading(false);
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: prevMessages.length + 1,
-            author: "bot",
-            text: `Maladie : ${response.disease}, Traitement : ${response.treatment}`,
-          },
-        ]);
-      } catch (error) {
-        console.error("Frontend: Erreur lors du parsing des données : ", error);
-      }
-    };
+        if (response.question) {
+          setPendingQuestion(response.question);
+        } else {
+          let botMessage = response.disease
+            ? `Disease: ${response.disease}, Treatment: ${response.treatment}`
+            : "I couldn't find a matching result. Please try again with different symptoms.";
 
-    ws.onclose = () => {
-      console.log("Frontend: Connexion fermée.");
-    };
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { id: prevMessages.length + 1, author: "bot", text: botMessage },
+          ]);
+          setPendingQuestion(null);
+        }
 
-    ws.onerror = (error) => {
-      console.error("Frontend: Une erreur est survenue : ", error);
-    };
+        scrollToBottom();
+      }, 2000);
+    });
 
-    setSocket(ws);
+    socket.on("disconnect", () => console.log("Frontend: Déconnecté."));
+    socket.on("connect_error", (error) => console.error("Frontend: Erreur de connexion : ", error));
 
-    // Nettoyage à la fermeture du composant
     return () => {
       console.log("Frontend: Fermeture de la connexion...");
-      ws.close();
+      socket.off("message");
     };
   }, []);
 
-  // Fonction pour envoyer un message au serveur
+  // Fonction pour envoyer un message utilisateur
   const sendMessage = () => {
-    if (inputMessage.trim() && socket) {
-      console.log("Frontend: Envoi du message : ", inputMessage);
+    if (!inputMessage.trim()) return;
 
+    const userMessage = inputMessage.toLowerCase().trim();
+    let botReply = null;
+
+    if (userMessage === "hello") {
+      botReply = "Hello! Describe your symptoms to get a diagnosis.";
+    } else if (userMessage === "thank you") {
+      botReply = "You're welcome! I'm here to assist you.";
+    }
+
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { id: prevMessages.length + 1, author: "user", text: inputMessage },
+    ]);
+
+    if (botReply) {
       setMessages((prevMessages) => [
         ...prevMessages,
-        { id: prevMessages.length + 1, author: "user", text: inputMessage },
+        { id: prevMessages.length + 2, author: "bot", text: botReply },
       ]);
-
-      // Envoi des symptômes au serveur WebSocket
-      socket.send(inputMessage);
-      setInputMessage("");  
+      scrollToBottom();
+    } else {
+      setIsLoading(true);
+      socket.emit("message", inputMessage);
     }
+
+    setInputMessage("");
+  };
+
+  // Fonction pour envoyer le niveau de douleur
+  const sendPainLevel = (level) => {
+    if (!pendingQuestion) return;
+    const symptom = pendingQuestion.match(/'(.*?)'/)[1];
+    socket.emit("message", `pain-level:${symptom}:${level}`);
+    setPendingQuestion(null);
   };
 
   return (
@@ -84,12 +112,28 @@ const ChatInterface = () => {
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
+
+        {isLoading && <div className="chat-message bot"><span className="loader">The bot is thinking...</span></div>}
+
+        {pendingQuestion && (
+          <div className="question-box">
+            <p>{pendingQuestion}</p>
+            <div className="pain-level-buttons">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                <button key={num} className="degree-button" onClick={() => sendPainLevel(num)}>
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
-      <ChatInput
-        inputMessage={inputMessage}
-        setInputMessage={setInputMessage}
-        sendMessage={sendMessage}
-      />
+
+      {!pendingQuestion && (
+        <ChatInput inputMessage={inputMessage} setInputMessage={setInputMessage} sendMessage={sendMessage} />
+      )}
     </div>
   );
 };
